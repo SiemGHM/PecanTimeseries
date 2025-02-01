@@ -1,0 +1,17 @@
+#! /bin/bash
+#SBATCH --job-name=333t_job # Job name
+#SBATCH --output=/l/users/siem.hadish/4GPTPatchCompleteoutput_test14131B.txt # Standard output and error.
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --mem=40G
+#SBATCH --cpus-per-task=64
+#SBATCH --gres=gpu:4
+#SBATCH -p cscc-gpu-p
+#SBATCH --time=12:00:00
+#SBATCH -q cscc-gpu-qos
+
+nvidia-smi
+chmod +x completeScriptP3GPU
+pip install tqdm numpy matplotlib pandas scikit-learn
+./completeScriptP3GPU
+#./completeScriptP3GPU 
