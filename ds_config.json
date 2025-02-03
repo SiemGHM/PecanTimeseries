@@ -1,0 +1,19 @@
+{
+  "zero_optimization": {
+    "stage": 3,
+    "offload_optimizer": {
+      "device": "cpu",
+      "pin_memory": true
+    },
+    "contiguous_gradients": true,
+    "overlap_comm": true
+  },
+  "pipeline": {
+    "enabled": true,
+    "stages": 2,
+    "activation_checkpointing": true
+  },
+  "train_batch_size": "auto",
+  "train_micro_batch_size_per_gpu": "auto",
+  "gradient_accumulation_steps": "auto"
+}

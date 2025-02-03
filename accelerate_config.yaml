@@ -1,8 +1,9 @@
 compute_environment: LOCAL_MACHINE
-distributed_type: MULTI_GPU
+distributed_type: deepspeed
+deepspeed_config: ds_config.json
 machine_rank: 0
 mixed_precision: "no" # or 'fp16' or 'bf16' if you want half-precision
 num_machines: 1
-num_processes: 4     # number of GPUs (processes) on this machine
+num_processes: 2     # number of GPUs (processes) on this machine
 use_cpu: false
 

@@ -1,40 +1,18 @@
 #!/bin/bash
 
-# Exit on any error
+
+
 set -e
 
 # Function to display messages
 log() {
-    echo -e "\033[1;32m$1\033[0m"
-}
+	    echo -e "\033[1;32m$1\033[0m"
+    }
 
-log "Starting setup process..."
-
-# Step 1: Check for Existing Miniconda Installation
-if [ -d "$HOME/miniconda" ]; then
-    log "Miniconda is already installed. Removing existing installation to avoid conflicts..."
-    rm -rf $HOME/miniconda
-fi
-
-# Step 2: Download Miniconda
-log "Downloading Miniconda..."
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-
-# Step 3: Install Miniconda
-log "Installing Miniconda..."
-bash miniconda.sh -b -p $HOME/miniconda
-
-# Step 4: Add Miniconda to PATH
-log "Configuring PATH for Miniconda..."
-export PATH="$HOME/miniconda/bin:$PATH"
-echo "export PATH=\"$HOME/miniconda/bin:\$PATH\"" >> ~/.bashrc
-source ~/.bashrc
-
-# Step 5: Verify Conda Installation
 log "Verifying Conda installation..."
 if ! command -v conda &> /dev/null; then
-    echo "Error: Conda installation failed."
-    exit 1
+	    echo "Error: Conda installation failed."
+	        exit 1
 fi
 conda --version
 
@@ -64,14 +42,13 @@ pip install --upgrade huggingface_hub
 # Step 10: Run ddpTorch.sh
 SCRIPT_NAME="runScript.sh"
 if [ -f "$SCRIPT_NAME" ]; then
-    log "Running $SCRIPT_NAME..."
-    chmod +x $SCRIPT_NAME
-    ./$SCRIPT_NAME
-    #python patchtst_pretrain.py --dset custom --mask_ratio 0.4
-else
-    echo "Error: $SCRIPT_NAME not found in the current directory."
-    exit 1
+	    log "Running $SCRIPT_NAME..."
+	        chmod +x $SCRIPT_NAME
+		    ./$SCRIPT_NAME
+		        #python patchtst_pretrain.py --dset custom --mask_ratio 0.4
+		else
+			    echo "Error: $SCRIPT_NAME not found in the current directory."
+			        exit 1
 fi
 
 log "Setup process complete!"
-

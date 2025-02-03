@@ -106,11 +106,13 @@ if __name__ == '__main__':
     args.use_gpu = True if torch.cuda.is_available() else False #and args.use_gpu else False
     print(args.use_gpu)
     print("args.","use_gpu")
+    print("use multiGPU", args.use_multi_gpu)
     print(torch.cuda.is_available())
-
+    print("Inside the run file", args.devices)
     if args.use_gpu and args.use_multi_gpu:
         args.devices = args.devices.replace(' ', '')
         device_ids = args.devices.split(',')
+        print(device_ids, "DEVICE IDS")
         args.device_ids = [int(id_) for id_ in device_ids]
         args.gpu = args.device_ids[0]
 
