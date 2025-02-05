@@ -28,15 +28,20 @@ source activate $ENV_NAME
 
 # Step 8: Install Required Packages
 log "Installing PyTorch (with CUDA), NumPy, and Pandas..."
-conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
-conda install numpy pandas -y
+#conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
+#conda install numpy pandas -y
+pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
+pip install numpy pandas 
+
+
+
 
 # Step 9: Verify PyTorch Installation
 log "Verifying PyTorch installation..."
 python -c "import torch; print('PyTorch version:', torch.__version__); print('CUDA available:', torch.cuda.is_available())"
 nvidia-smi
 pip install tqdm numpy matplotlib pandas scikit-learn pynvml sentencepiece transformers protobuf google
-pip install reformer-pytorch
+pip install reformer-pytorch accelerate
 pip install --upgrade huggingface_hub
 
 # Step 10: Run ddpTorch.sh

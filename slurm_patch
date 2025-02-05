@@ -1,6 +1,6 @@
 #! /bin/bash
-#SBATCH --job-name=test_job # Job name
-#SBATCH --output=/l/users/siem.hadish/GPTPatchCompleteoutput_test01B.txt # Standard output and error.
+#SBATCH --job-name=test_justNVIDIA # Job name
+#SBATCH --output=/l/users/siem.hadish/JustNVIDIA4GPU.txt # Standard output and error.
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --mem=40G
@@ -10,7 +10,7 @@
 #SBATCH --time=12:00:00
 #SBATCH -q cscc-gpu-qos
 
-nvidia-smi
+nvidia-smi >PreComp.txt
 chmod +x completeScript
 pip install tqdm numpy matplotlib pandas scikit-learn
 ./completeScriptP 
