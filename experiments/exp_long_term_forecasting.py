@@ -10,10 +10,10 @@ import time
 import warnings
 import numpy as np
 import deepspeed
-# Import Accelerator from Hugging Face Accelerate
+
 from accelerate import Accelerator
 
-from deepspeed.ops.adam import DeepSpeedCPUAdam
+# from deepspeed.ops.adam import DeepSpeedCPUAdam
 warnings.filterwarnings('ignore')
 
 
@@ -24,7 +24,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
     def _build_model(self):
         # Build the model without wrapping in DataParallel.
         # Accelerate will handle device placement.
-        model = self.model_dict[self.args.model].Model(self.args).float()
+        model = self.model_dict[self.args.model].Model(self.args).bfloat16()
         return model
 
     def _get_data(self, flag):
@@ -32,6 +32,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         return data_set, data_loader
 
     def _select_optimizer(self):
+        print("LEARNING RATE", self.args.learning_rate)
+        self.args.learning_rate *= 0.2
     
 
         params = list(self.model.parameters())
@@ -42,13 +44,13 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         assert len(trainable_params) > 0, "All parameters are frozen!"
 
                                 # Initialize DeepSpeed-compatible optimizer
-        model_optim = DeepSpeedCPUAdam(trainable_params, lr=self.args.learning_rate)
+        model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
 
-        print("Optimizer Parameter Groups:")
-        for i, group in enumerate(model_optim.param_groups):
-            params = group['params']
-            print(f"Group {i}: {len(params)} parameters")
-            assert len(params) > 0, f"Parameter group {i} is empty!"
+        # print("Optimizer Parameter Groups:")
+        # for i, group in enumerate(model_optim.param_groups):
+        #     params = group['params']
+        #     print(f"Group {i}: {len(params)} parameters")
+        #     assert len(params) > 0, f"Parameter group {i} is empty!"
 
 
         return model_optim
@@ -123,11 +125,11 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         # Select optimizer and criterion
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
-        for name, param in self.model.named_parameters():
-            print(name, "Param name")
-            if not isinstance(param, torch.nn.Parameter):
-                print(f"Warning: {name} is not an nn.Parameter!")
-                print("Model parameters registered:", [name for name, _ in self.model.named_parameters()])
+        # for name, param in self.model.named_parameters():
+        #     print(name, "Param name")
+        #     if not isinstance(param, torch.nn.Parameter):
+        #         print(f"Warning: {name} is not an nn.Parameter!")
+        #         print("Model parameters registered:", [name for name, _ in self.model.named_parameters()])
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
@@ -138,9 +140,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         #        model_parameters = self.model.parameters(),
         #        config = ds_config
         #        )
-        for name, param in self.model.named_parameters():
-                if not hasattr(param, 'ds_id'):
-                            print(f"Parameter {name} not registered correctly.")
+        # for name, param in self.model.named_parameters():
+        #         if not hasattr(param, 'ds_id'):
+        #                     print(f"Parameter {name} not registered correctly.")
         # Prepare model, optimizer, and dataloaders with Accelerator.
         self.model, model_optim, train_loader, vali_loader, test_loader = accelerator.prepare(
             self.model, model_optim, train_loader, vali_loader, test_loader
@@ -157,26 +159,26 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 model_optim.zero_grad()
 
                 # Data is assumed to be already on the correct device.
-                batch_x = batch_x.float()
-                batch_y = batch_y.float()
+                batch_x = batch_x.to(torch.bfloat16)
+                batch_y = batch_y.to(torch.bfloat16)
                 if 'PEMS' in self.args.data or 'Solar' in self.args.data:
                     batch_x_mark = None
                     batch_y_mark = None
                 else:
-                    batch_x_mark = batch_x_mark.float()
-                    batch_y_mark = batch_y_mark.float()
+                    batch_x_mark = batch_x_mark.to(torch.bfloat16)
+                    batch_y_mark = batch_y_mark.to(torch.bfloat16)
 
                 # Prepare decoder input
                 
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float().to(accelerator.device)
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(accelerator.device)
+                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float().to(accelerator.device).to(torch.bfloat16)
+                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(accelerator.device).to(torch.bfloat16)
                 
 
-                print(batch_x.device)
-                print(batch_y.device)
-                print(batch_y_mark.device)
-                print(batch_x_mark.device)
-                print(dec_inp.device)
+                # print(batch_x.device)
+                # print(batch_y.device)
+                # print(batch_y_mark.device)
+                # print(batch_x_mark.device)
+                # print(dec_inp.device)
                 #rint("MODEL DEVICE", self.model.device)                
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
@@ -196,8 +198,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                         print(3)
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                     else:
-                        print(4)
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                        # print(4)
+                        outputs = self.model(batch_x.to(torch.bfloat16), batch_x_mark.to(torch.bfloat16), dec_inp.to(torch.bfloat16), batch_y_mark.to(torch.bfloat16)) #x = x.to(torch.bfloat16)
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:]
@@ -221,6 +223,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     model_optim.step()
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
+
+
             train_loss = np.average(train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
